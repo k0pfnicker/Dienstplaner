@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="src/Dienstplanner/icon.png" width="100" height="100" alt="Dienstplaner Icon">
+  <img src="assets/icon.png" width="100" height="100" alt="Dienstplaner Icon">
   <h1>Dienstplaner</h1>
   <p><b>Intelligenter Dokumentenleser & Schicht-Statistik für Word-Dienstpläne</b></p>
 </div>
