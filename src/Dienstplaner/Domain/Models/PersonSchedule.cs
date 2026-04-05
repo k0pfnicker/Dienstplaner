@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace Dienstplanner.Domain.Models;
+namespace Dienstplaner.Domain.Models;
 
 public class PersonSchedule
 {

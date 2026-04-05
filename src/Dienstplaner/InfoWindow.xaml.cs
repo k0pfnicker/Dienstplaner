@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace Dienstplanner;
+namespace Dienstplaner;
 
 public partial class InfoWindow : Window
 {

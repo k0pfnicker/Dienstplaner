@@ -1,7 +1,7 @@
 using System.Windows;
-using Dienstplanner.ViewModels;
+using Dienstplaner.ViewModels;
 
-namespace Dienstplanner;
+namespace Dienstplaner;
 
 public partial class MainWindow : Window
 {

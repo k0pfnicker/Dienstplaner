@@ -3,14 +3,14 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using Spire.Doc;
 using Spire.Doc.Documents;
 using Spire.Doc.Fields;
-using Dienstplanner.Application.Interfaces;
-using Dienstplanner.Domain.Models;
-using Dienstplanner.Domain.Services;
+using Dienstplaner.Application.Interfaces;
+using Dienstplaner.Domain.Models;
+using Dienstplaner.Domain.Services;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using System.IO;
 
-namespace Dienstplanner.Infrastructure;
+namespace Dienstplaner.Infrastructure;
 
 public class WordScheduleImporter : IScheduleImporter
 {

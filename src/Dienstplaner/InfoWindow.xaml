@@ -1,4 +1,4 @@
-<Window x:Class="Dienstplanner.InfoWindow"
+<Window x:Class="Dienstplaner.InfoWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Information &amp; Hilfe" Height="500" Width="450"

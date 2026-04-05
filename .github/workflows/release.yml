@@ -23,9 +23,9 @@ jobs:
         dotnet-version: '8.0.x'
         
     - name: Publish Windows 64-bit EXE
-      run: dotnet publish ./src/Dienstplanner/Dienstplanner.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o release_output
+      run: dotnet publish ./src/Dienstplaner/Dienstplaner.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o release_output
       
     - name: Upload Release Asset
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh release upload "${{ github.event.release.tag_name }}" release_output/Dienstplanner.exe --clobber
+      run: gh release upload "${{ github.event.release.tag_name }}" release_output/Dienstplaner.exe --clobber

@@ -1,6 +1,6 @@
-using Dienstplanner.Domain.Models;
+using Dienstplaner.Domain.Models;
 
-namespace Dienstplanner.Application.Interfaces;
+namespace Dienstplaner.Application.Interfaces;
 
 public interface IScheduleImporter
 {

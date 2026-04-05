@@ -1,4 +1,4 @@
-namespace Dienstplanner.ViewModels;
+namespace Dienstplaner.ViewModels;
 using System.Windows.Input;
 
 public class RelayCommand : ICommand

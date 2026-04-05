@@ -1,10 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using Dienstplanner.Application.Interfaces;
-using Dienstplanner.Domain.Models;
+using Dienstplaner.Application.Interfaces;
+using Dienstplaner.Domain.Models;
 using Microsoft.Win32;
 
-namespace Dienstplanner.ViewModels;
+namespace Dienstplaner.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {

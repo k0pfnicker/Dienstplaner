@@ -1,9 +1,9 @@
-using Dienstplanner.Domain.Models;
-using Dienstplanner.Domain.Services;
+using Dienstplaner.Domain.Models;
+using Dienstplaner.Domain.Services;
 using System;
 using Xunit;
 
-namespace Dienstplanner.Tests;
+namespace Dienstplaner.Tests;
 
 public class ShiftCodeInterpreterTests
 {

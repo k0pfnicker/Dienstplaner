@@ -1,12 +1,12 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
-using Dienstplanner.ViewModels;
-using Dienstplanner.Domain.Services;
-using Dienstplanner.Application.Interfaces;
-using Dienstplanner.Infrastructure;
+using Dienstplaner.ViewModels;
+using Dienstplaner.Domain.Services;
+using Dienstplaner.Application.Interfaces;
+using Dienstplaner.Infrastructure;
 using System.Globalization;
 
-namespace Dienstplanner;
+namespace Dienstplaner;
 
 public partial class App : System.Windows.Application
 {

@@ -21,6 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Dienstplanner\Dienstplanner.csproj" />
+    <ProjectReference Include="..\..\src\Dienstplaner\Dienstplaner.csproj" />
   </ItemGroup>
 </Project>

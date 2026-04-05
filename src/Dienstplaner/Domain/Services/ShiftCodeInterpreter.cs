@@ -1,6 +1,6 @@
-namespace Dienstplanner.Domain.Services;
+namespace Dienstplaner.Domain.Services;
 
-using Dienstplanner.Domain.Models;
+using Dienstplaner.Domain.Models;
 
 public class ShiftCodeInterpreter
 {

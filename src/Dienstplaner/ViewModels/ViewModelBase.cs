@@ -1,4 +1,4 @@
-namespace Dienstplanner.ViewModels;
+namespace Dienstplaner.ViewModels;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 

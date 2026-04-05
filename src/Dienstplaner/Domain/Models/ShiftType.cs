@@ -1,4 +1,4 @@
-namespace Dienstplanner.Domain.Models;
+namespace Dienstplaner.Domain.Models;
 
 public enum ShiftType
 {

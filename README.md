@@ -17,18 +17,18 @@ Der **Dienstplaner** ist eine Desktop-Anwendung (.NET 8 WPF), die automatisiert 
 - **Autarke `.exe` (1-Klick Setup):** Komplett offline lauffähig, ohne Installation.
 
 ## Download & Start
-Lade dir die neueste, sofort ausführbare `Dienstplanner.exe` unter den [GitHub Releases](../../releases) herunter.
+Lade dir die neueste, sofort ausführbare `Dienstplaner.exe` unter den [GitHub Releases](../../releases) herunter.
 Das Tool benötigt keine Administratorrechte oder zwingende Vorinstallationen, da alle .NET 8 Abhängigkeiten bereits eingebaut sind (Single-File App).
 
 ## Entwicklung (Entwickler)
 Das Projekt nutzt **C# / .NET 8 / WPF / MVVM**.
 ```bash
 # Projekt klonen
-git clone https://github.com/K0pfnicker/Dienstplanner.git
+git clone https://github.com/K0pfnicker/Dienstplaner.git
 
 # Lokalen Build testen
-cd Dienstplanner
-dotnet run --project src/Dienstplanner/Dienstplanner.csproj
+cd Dienstplaner
+dotnet run --project src/Dienstplaner/Dienstplaner.csproj
 ```
 
 ## Architektur
