@@ -10,4 +10,10 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = viewModel;
     }
+
+    private void InfoButton_Click(object sender, RoutedEventArgs e)
+    {
+        var infoWindow = new InfoWindow { Owner = this };
+        infoWindow.ShowDialog();
+    }
 }

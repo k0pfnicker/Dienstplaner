@@ -25,18 +25,27 @@
                           SelectedItem="{Binding SelectedPersonSchedule}"
                           DisplayMemberPath="Name" 
                           Width="200"/>
+                <Separator/>
+                <Button Click="InfoButton_Click" ToolTip="Erklärungen zu Zeiten und Farben">ℹ Info &amp; Hilfe</Button>
             </ToolBar>
         </ToolBarPanel>
 
         <!-- Main Content & Logs -->
         <Grid Grid.Row="1" Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="3*" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="1*" />
-            </Grid.RowDefinitions>
-            
-            <DataGrid Grid.Row="0" 
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="280" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Linke Spalte (Tabelle und Log) -->
+            <Grid Grid.Column="0" Margin="0,0,10,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="3*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
+                
+                <DataGrid Grid.Row="0" 
                       ItemsSource="{Binding Assignments}" 
                       AutoGenerateColumns="False" 
                       IsReadOnly="True"
@@ -105,6 +114,83 @@
                          Background="Transparent"
                          FontFamily="Consolas" 
                          FontSize="11" />
+            </GroupBox>
+            </Grid>
+
+            <!-- Rechte Spalte: Statistik -->
+            <GroupBox Grid.Column="1" Header="Statistik">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    
+                    <CheckBox Grid.Row="0" Margin="0,0,0,10"
+                              IsChecked="{Binding ShowAllStatistics}"
+                              Content="Für alle Personen anzeigen"/>
+
+                    <!-- Single User Stats -->
+                    <StackPanel Grid.Row="1">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowAllStatistics}" Value="False">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        
+                        <TextBlock Text="{Binding SelectedPersonSchedule.Name, StringFormat='{}Name: {0}'}" FontWeight="Bold" Margin="0,0,0,10" FontSize="14" />
+                        <TextBlock Text="{Binding SelectedPersonSchedule.TotalWorkHours, StringFormat='{}Arbeitsstunden: {0:F1} h'}" Margin="0,2" />
+                        <TextBlock Text="{Binding SelectedPersonSchedule.UrlaubDays, StringFormat='{}Urlaub: {0} Tag(e)'}" Margin="0,2" />
+                        <TextBlock Text="{Binding SelectedPersonSchedule.KrankDays, StringFormat='{}Krankheit: {0} Tag(e)'}" Margin="0,2" />
+                        <TextBlock Text="{Binding SelectedPersonSchedule.FeiertagDays, StringFormat='{}Feiertage: {0} Tag(e)'}" Margin="0,2" />
+                        <TextBlock Text="{Binding SelectedPersonSchedule.FreiDays, StringFormat='{}Freie Anträge / Frei: {0} Tag(e)'}" Margin="0,2" />
+                    </StackPanel>
+
+                    <!-- All Users Stats -->
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer.Style>
+                            <Style TargetType="ScrollViewer">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ShowAllStatistics}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ScrollViewer.Style>
+                        <ItemsControl ItemsSource="{Binding AvailablePersons}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Padding="0,5">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <Grid Margin="5,2,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" MinWidth="80"/>
+                                                    <ColumnDefinition Width="Auto" MinWidth="80"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition/>
+                                                    <RowDefinition/>
+                                                    <RowDefinition/>
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding TotalWorkHours, StringFormat='{}Std: {0:F1}h'}" FontSize="11"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UrlaubDays, StringFormat='{}Urlaub: {0}'}" FontSize="11"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding KrankDays, StringFormat='{}Krank: {0}'}" FontSize="11"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FeiertagDays, StringFormat='{}Feiertag: {0}'}" FontSize="11"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding FreiDays, StringFormat='{}Frei: {0}'}" FontSize="11"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
             </GroupBox>
         </Grid>
 

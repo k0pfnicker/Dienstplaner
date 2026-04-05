@@ -13,6 +13,7 @@ public class MainViewModel : ViewModelBase
     private MonthSchedule? _currentSchedule;
     private PersonSchedule? _selectedPersonSchedule;
     private string _statusText = "Bereit.";
+    private bool _showAllStatistics;
 
     public MainViewModel(IScheduleImporter importer)
     {
@@ -41,6 +42,12 @@ public class MainViewModel : ViewModelBase
     }
 
     public IEnumerable<DayAssignment>? Assignments => SelectedPersonSchedule?.Assignments;
+
+    public bool ShowAllStatistics
+    {
+        get => _showAllStatistics;
+        set => SetProperty(ref _showAllStatistics, value);
+    }
 
     public string StatusText
     {

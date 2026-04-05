@@ -26,14 +26,23 @@ public record DayAssignment(
     public string DayOfMonthStr => IsPaddingDay ? "-" : Date.Day.ToString();
     public bool IsToday => Date.Date == DateTime.Today;
     
+    public TimeSpan Duration
+    {
+        get
+        {
+            if (IsPaddingDay || !StartTime.HasValue || !EndTime.HasValue) return TimeSpan.Zero;
+            var duration = EndTime.Value - StartTime.Value;
+            if (duration.TotalHours < 0) duration = duration.Add(TimeSpan.FromHours(24));
+            return duration;
+        }
+    }
+
     public string DurationStr
     {
         get
         {
             if (IsPaddingDay || !StartTime.HasValue || !EndTime.HasValue) return "---";
-            var duration = EndTime.Value - StartTime.Value;
-            if (duration.TotalHours < 0) duration = duration.Add(TimeSpan.FromHours(24));
-            return duration.ToString(@"hh\:mm");
+            return Duration.ToString(@"hh\:mm");
         }
     }
 }
