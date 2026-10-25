@@ -93,6 +93,57 @@ public class DienstplanerCoreTests
     }
 
     [Fact]
+    public void ScheduleSolver_RespectsFirstWorkDaysAndBuildsCohesiveShiftBlocks()
+    {
+        var schedule = new MonthSchedule(2026, 10);
+        var solver = new ScheduleSolver();
+
+        var demir = schedule.Employees.First(e => e.Name.Contains("Demir"));
+        var sitter = schedule.Employees.First(e => e.Name.Contains("Sitter"));
+
+        // User-Szenario:
+        // 1. Demir erster Arbeitstag ist Tag 2 mit Frühschicht (S)
+        schedule.SetCode(demir.Id, 2, "S", isLocked: true);
+
+        // 2. Sitter erster Arbeitstag ist Tag 7 mit Nachtschicht (N)
+        schedule.SetCode(sitter.Id, 7, "N", isLocked: true);
+
+        solver.GenerateSchedule(schedule);
+
+        // Prüfung 1: Demir darf an Tag 1 NICHT arbeiten (da sein erster Tag Tag 2 ist)
+        var demirDay1 = schedule.GetCell(demir.Id, 1);
+        Assert.True(string.IsNullOrEmpty(demirDay1.Code) || demirDay1.ShiftType == ShiftType.None || demirDay1.ShiftType == ShiftType.FT, 
+            $"Demir sollte an Tag 1 vor seinem ersten Arbeitstag frei haben, hat aber {demirDay1.Code}");
+
+        // Prüfung 2: Sitter darf an den Tagen 1 bis 6 NICHT arbeiten (da sein erster Tag Tag 7 ist)
+        for (int d = 1; d <= 6; d++)
+        {
+            var sitterCell = schedule.GetCell(sitter.Id, d);
+            Assert.True(string.IsNullOrEmpty(sitterCell.Code) || sitterCell.ShiftType == ShiftType.None || sitterCell.ShiftType == ShiftType.FT,
+                $"Sitter sollte vor Tag 7 frei haben, hat aber an Tag {d} {sitterCell.Code}");
+        }
+
+        // Prüfung 3: Demir führt seinen S-Block ab Tag 2 fort (z.B. Tage 2, 3, 4 sind S!)
+        var demirDay2 = schedule.GetCell(demir.Id, 2);
+        var demirDay3 = schedule.GetCell(demir.Id, 3);
+        var demirDay4 = schedule.GetCell(demir.Id, 4);
+        Assert.Equal("S", demirDay2.Code);
+        Assert.Equal("S", demirDay3.Code);
+        Assert.Equal("S", demirDay4.Code);
+
+        // Prüfung 4: Sitter führt seinen N-Block ab Tag 7 fort
+        var sitterDay7 = schedule.GetCell(sitter.Id, 7);
+        var sitterDay8 = schedule.GetCell(sitter.Id, 8);
+        Assert.Equal("N", sitterDay7.Code);
+        Assert.Equal("N", sitterDay8.Code);
+
+        // Prüfung 5: Tag 1 ist trotzdem voll besetzt (durch Steffens / Aushilfen)
+        var covDay1 = schedule.GetCoverage(1);
+        Assert.True(covDay1.HasS);
+        Assert.True(covDay1.HasN);
+    }
+
+    [Fact]
     public void Exporters_PdfAndDoc_GenerateValidFiles()
     {
         var schedule = new MonthSchedule(2026, 10);
