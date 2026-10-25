@@ -16,6 +16,7 @@ public class MainViewModel : ViewModelBase
     private readonly WordScheduleImporter _wordImporter = new();
     private readonly PdfScheduleExporter _pdfExporter = new();
     private readonly DocScheduleExporter _docExporter = new();
+    private readonly ScheduleRepository _repository = new();
 
     private MonthSchedule _schedule;
     private int _year;
@@ -99,16 +100,22 @@ public class MainViewModel : ViewModelBase
 
     public void LoadSchedule(int year, int month, MonthSchedule? existingSchedule = null)
     {
-        _schedule = existingSchedule ?? new MonthSchedule(year, month);
+        _schedule = existingSchedule ?? _repository.Load(year, month) ?? new MonthSchedule(year, month);
         _year = _schedule.Year;
         _month = _schedule.Month;
+
+        // Vormonats-Schichten für den 1. des Monats laden (monatsübergreifende Ruhezeit)
+        var prevDate = new DateTime(year, month, 1).AddMonths(-1);
+        var prevShifts = _repository.GetLastDayShifts(prevDate.Year, prevDate.Month);
+        _schedule.PreviousMonthLastDayShifts = prevShifts;
 
         OnPropertyChanged(nameof(Year));
         OnPropertyChanged(nameof(Month));
         OnPropertyChanged(nameof(MonthYearTitle));
 
         RefreshUi();
-        StatusMessage = $"Plan für {MonthYearTitle} geladen ({_schedule.DaysInMonth} Tage).";
+        string prevNote = prevShifts.Count > 0 ? $" ({prevShifts.Count} Vormonatsschichten verknüpft)" : "";
+        StatusMessage = $"Plan für {MonthYearTitle} geladen ({_schedule.DaysInMonth} Tage){prevNote}.";
     }
 
     public void RefreshUi()
@@ -159,6 +166,7 @@ public class MainViewModel : ViewModelBase
         {
             StatusMessage = "Generiere Dienstplan nach Prioritäten und Ruhezeitregeln...";
             _solver.GenerateSchedule(_schedule);
+            _repository.Save(_schedule);
             RefreshUi();
             StatusMessage = "Dienstplan erfolgreich generiert! Alle Schichten wurden besetzt.";
         }
@@ -315,6 +323,7 @@ public class MainViewModel : ViewModelBase
         // Update Header & Stats
         DayHeaders[cell.Day - 1] = _schedule.GetCoverage(cell.Day);
         RefreshStats();
+        _repository.Save(_schedule);
     }
 
     public void SetCellManual(DayCell cell, string code)
@@ -323,5 +332,6 @@ public class MainViewModel : ViewModelBase
         cell.IsLocked = !string.IsNullOrEmpty(code);
         DayHeaders[cell.Day - 1] = _schedule.GetCoverage(cell.Day);
         RefreshStats();
+        _repository.Save(_schedule);
     }
 }

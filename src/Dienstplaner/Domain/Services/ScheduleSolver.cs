@@ -51,6 +51,16 @@ public class ScheduleSolver
             shiftCounts[empId]++;
         }
 
+        // Monatsübergreifende Kontinuität: Schichten vom letzten Tag des Vormonats initialisieren
+        foreach (var (empId, pShift) in schedule.PreviousMonthLastDayShifts)
+        {
+            if (pShift is ShiftType.S or ShiftType.N or ShiftType.T)
+            {
+                lastShift[empId] = pShift;
+                consecutiveDays[empId] = 1;
+            }
+        }
+
         // 3. Tag für Tag dynamisch planen
         for (int day = 1; day <= schedule.DaysInMonth; day++)
         {
@@ -203,6 +213,17 @@ public class ScheduleSolver
                 if (prevCell.ShiftType == ShiftType.N && (shiftToFill is ShiftType.S or ShiftType.T))
                 {
                     continue; // Mindestruhezeit verletzt!
+                }
+            }
+            else if (day == 1)
+            {
+                // Monatsübergreifende Kontinuität: Schicht vom letzten Tag des Vormonats prüfen!
+                if (schedule.PreviousMonthLastDayShifts.TryGetValue(emp.Id, out var prevMonthShift))
+                {
+                    if (prevMonthShift == ShiftType.N && (shiftToFill is ShiftType.S or ShiftType.T))
+                    {
+                        continue; // Mindestruhezeit nach Nachtschicht am Monatsletzten verletzt!
+                    }
                 }
             }
 

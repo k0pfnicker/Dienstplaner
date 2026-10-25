@@ -144,6 +144,30 @@ public class DienstplanerCoreTests
     }
 
     [Fact]
+    public void CrossMonthContinuity_PrevMonthNightShift_BlocksDay1MorningShift()
+    {
+        // November 2026 planen
+        var november = new MonthSchedule(2026, 11);
+        var demir = november.Employees.First(e => e.Name.Contains("Demir"));
+
+        // Demir hatte am 31. Oktober Nachtschicht (N bis 00:00 Uhr)
+        november.PreviousMonthLastDayShifts[demir.Id] = ShiftType.N;
+
+        var solver = new ScheduleSolver();
+        solver.GenerateSchedule(november);
+
+        // Am 1. November darf Demir KEINESFALLS Schicht S (00:00) oder T (07:15) haben!
+        var demirNov1 = november.GetCell(demir.Id, 1);
+        Assert.NotEqual(ShiftType.S, demirNov1.ShiftType);
+        Assert.NotEqual(ShiftType.T, demirNov1.ShiftType);
+
+        // Der 1. November muss trotzdem voll besetzt sein (durch andere Mitarbeiter)
+        var covNov1 = november.GetCoverage(1);
+        Assert.True(covNov1.HasS);
+        Assert.True(covNov1.HasN);
+    }
+
+    [Fact]
     public void Exporters_PdfAndDoc_GenerateValidFiles()
     {
         var schedule = new MonthSchedule(2026, 10);

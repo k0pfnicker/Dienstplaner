@@ -12,6 +12,7 @@ public class MonthSchedule
     public ObservableCollection<Employee> Employees { get; } = new();
     public Dictionary<int, string> Holidays { get; set; } = new();
     public Dictionary<(string employeeId, int day), DayCell> Cells { get; } = new();
+    public Dictionary<string, ShiftType> PreviousMonthLastDayShifts { get; set; } = new();
 
     public MonthSchedule(int year, int month, IEnumerable<Employee>? employees = null)
     {
