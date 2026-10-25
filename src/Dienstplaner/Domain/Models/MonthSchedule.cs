@@ -165,6 +165,12 @@ public class MonthSchedule
         return stats;
     }
 
+    public EmployeeMonthlyStats CalculateStats(string employeeId)
+    {
+        var emp = Employees.FirstOrDefault(e => e.Id == employeeId) ?? new Employee { Id = employeeId };
+        return CalculateStats(emp);
+    }
+
     public List<EmployeeMonthlyStats> GetAllStats()
     {
         return Employees.Select(CalculateStats).ToList();

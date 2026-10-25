@@ -15,9 +15,9 @@ public class Employee
     {
         return new List<Employee>
         {
-            new Employee { Id = "1023", Name = "Demir, Osman", IsMainStaff = true, Priority = 1, TargetHours = 174.0 },
-            new Employee { Id = "194", Name = "Sitter, Martin", IsMainStaff = true, Priority = 2, TargetHours = 174.0 },
-            new Employee { Id = "384", Name = "Steffens, Anton", IsMainStaff = true, Priority = 3, TargetHours = 174.0 },
+            new Employee { Id = "1023", Name = "Demir, Osman", IsMainStaff = true, Priority = 1, TargetHours = 173.0 },
+            new Employee { Id = "194", Name = "Sitter, Martin", IsMainStaff = true, Priority = 2, TargetHours = 173.0 },
+            new Employee { Id = "384", Name = "Steffens, Anton", IsMainStaff = true, Priority = 3, TargetHours = 173.0 },
             new Employee { Id = "140", Name = "Pfaffenzeller, Derek", IsMainStaff = false, Priority = 4, TargetHours = 0.0 },
             new Employee { Id = "168", Name = "Scheuerer, Martin", IsMainStaff = false, Priority = 5, TargetHours = 0.0 },
             new Employee { Id = "312", Name = "Saeed, Sawat", IsMainStaff = false, Priority = 6, TargetHours = 0.0 },

@@ -110,6 +110,18 @@ public class DienstplanerCoreTests
 
         solver.GenerateSchedule(schedule);
 
+        for (int d = 25; d <= schedule.DaysInMonth; d++)
+        {
+            var cov = schedule.GetCoverage(d);
+            System.Console.WriteLine($"Oct Tag {d}: S={cov.HasS}, N={cov.HasN}, T={cov.HasT}");
+            foreach (var emp in schedule.Employees)
+            {
+                var c = schedule.GetCell(emp.Id, d);
+                if (!string.IsNullOrEmpty(c.Code))
+                    System.Console.WriteLine($"   {emp.Name}: {c.Code}");
+            }
+        }
+
         // Prüfung 1: Demir darf an Tag 1 NICHT arbeiten (da sein erster Tag Tag 2 ist)
         var demirDay1 = schedule.GetCell(demir.Id, 1);
         Assert.True(string.IsNullOrEmpty(demirDay1.Code) || demirDay1.ShiftType == ShiftType.None || demirDay1.ShiftType == ShiftType.FT, 
@@ -174,6 +186,18 @@ public class DienstplanerCoreTests
         var solver = new ScheduleSolver();
         solver.GenerateSchedule(schedule);
 
+        for (int d = 25; d <= schedule.DaysInMonth; d++)
+        {
+            var cov = schedule.GetCoverage(d);
+            System.Console.WriteLine($"Oct Tag {d}: S={cov.HasS}, N={cov.HasN}, T={cov.HasT}");
+            foreach (var emp in schedule.Employees)
+            {
+                var c = schedule.GetCell(emp.Id, d);
+                if (!string.IsNullOrEmpty(c.Code))
+                    System.Console.WriteLine($"   {emp.Name}: {c.Code}");
+            }
+        }
+
         string tempDir = Path.Combine(Path.GetTempPath(), "DienstplanerTests");
         Directory.CreateDirectory(tempDir);
 
@@ -198,5 +222,99 @@ public class DienstplanerCoreTests
 
         // Aufräumen
         try { File.Delete(pdfPath); File.Delete(docPath); File.Delete(xlsxPath); } catch { }
+    }
+
+    [Fact]
+    public void November2026_ReviewRequirements_SatisfiedFully()
+    {
+        // November 2026 planen
+        var november = new MonthSchedule(2026, 11);
+        var solver = new ScheduleSolver();
+        solver.GenerateSchedule(november);
+
+        var allStats = november.GetAllStats();
+
+        // 1. Prio 1-3 (Demir, Sitter, Steffens) müssen mindestens 173 Std Minimum haben!
+        var mainStaff = november.Employees.Where(e => e.IsMainStaff).ToList();
+        Assert.Equal(3, mainStaff.Count);
+        foreach (var emp in mainStaff)
+        {
+            var stats = allStats.First(s => s.Employee.Id == emp.Id);
+            Assert.True(stats.TotalWorkedHours >= 173.0, 
+                $"{emp.Name} hat nur {stats.TotalWorkedHours:F2}h, gefordert sind mindestens 173h!");
+        }
+
+        // 2. Hoffmanns reicht 1 Schicht egal wo
+        var hoffmanns = november.Employees.FirstOrDefault(e => e.Name.Contains("Hoffmanns"));
+        if (hoffmanns != null)
+        {
+            var hStats = allStats.First(s => s.Employee.Id == hoffmanns.Id);
+            Assert.True(hStats.TotalShifts <= 1, 
+                $"Hoffmanns sollte maximal 1 Schicht haben, hat aber {hStats.TotalShifts}");
+        }
+
+        // 3. Scheuerer auch weniger Schichten (1-2)
+        var scheuerer = november.Employees.FirstOrDefault(e => e.Name.Contains("Scheuerer"));
+        if (scheuerer != null)
+        {
+            var sStats = allStats.First(s => s.Employee.Id == scheuerer.Id);
+            Assert.True(sStats.TotalShifts <= 2, 
+                $"Scheuerer sollte maximal 2 Schichten haben, hat aber {sStats.TotalShifts}");
+        }
+
+        // 4. Saeed kann NUR am Wochenende oder an Feiertagen arbeiten
+        var saeed = november.Employees.FirstOrDefault(e => e.Name.Contains("Saeed"));
+        if (saeed != null)
+        {
+            for (int d = 1; d <= november.DaysInMonth; d++)
+            {
+                var cell = november.GetCell(saeed.Id, d);
+                if (cell.ShiftType is ShiftType.S or ShiftType.N or ShiftType.T)
+                {
+                    bool isWeekend = cell.IsWeekend;
+                    bool isHoliday = cell.IsHoliday;
+                    Assert.True(isWeekend || isHoliday, 
+                        $"Saeed darf nur am Wochenende/Feiertag arbeiten, wurde aber an Tag {d} ({cell.Date:dd.MM.yyyy, dddd}) eingeteilt!");
+                }
+            }
+        }
+
+        // 5. Aushilfen dürfen generell NUR T oder Spät (N) machen, NIEMALS S (Frühschicht)!
+        var reliefStaff = november.Employees.Where(e => !e.IsMainStaff).ToList();
+        foreach (var emp in reliefStaff)
+        {
+            for (int d = 1; d <= november.DaysInMonth; d++)
+            {
+                var cell = november.GetCell(emp.Id, d);
+                Assert.NotEqual(ShiftType.S, cell.ShiftType);
+            }
+        }
+
+        // 6. Volle Besetzung an jedem Tag
+        for (int d = 1; d <= november.DaysInMonth; d++)
+        {
+            var cov = november.GetCoverage(d);
+            Assert.True(cov.HasS, $"Tag {d} fehlt S");
+            Assert.True(cov.HasN, $"Tag {d} fehlt N");
+            if (cov.NeedsDayShift)
+            {
+                Assert.True(cov.HasT, $"Tag {d} (WE/Feiertag) fehlt T");
+            }
+        }
+
+        // 7. Ruhezeitregel: Kein S oder T nach N
+        foreach (var emp in november.Employees)
+        {
+            for (int d = 1; d < november.DaysInMonth; d++)
+            {
+                var today = november.GetCell(emp.Id, d);
+                var tomorrow = november.GetCell(emp.Id, d + 1);
+                if (today.ShiftType == ShiftType.N)
+                {
+                    Assert.NotEqual(ShiftType.S, tomorrow.ShiftType);
+                    Assert.NotEqual(ShiftType.T, tomorrow.ShiftType);
+                }
+            }
+        }
     }
 }
