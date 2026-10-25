@@ -16,6 +16,7 @@ public class MainViewModel : ViewModelBase
     private readonly WordScheduleImporter _wordImporter = new();
     private readonly PdfScheduleExporter _pdfExporter = new();
     private readonly DocScheduleExporter _docExporter = new();
+    private readonly ExcelScheduleExporter _excelExporter = new();
     private readonly ScheduleRepository _repository = new();
 
     private MonthSchedule _schedule;
@@ -76,6 +77,7 @@ public class MainViewModel : ViewModelBase
     public ICommand ImportDocCommand { get; }
     public ICommand ExportPdfCommand { get; }
     public ICommand ExportDocCommand { get; }
+    public ICommand ExportExcelCommand { get; }
     public ICommand ClearPlanCommand { get; }
     public ICommand CellClickCommand { get; }
 
@@ -92,6 +94,7 @@ public class MainViewModel : ViewModelBase
         ImportDocCommand = new RelayCommand(_ => ImportDoc());
         ExportPdfCommand = new RelayCommand(_ => ExportPdf());
         ExportDocCommand = new RelayCommand(_ => ExportDoc());
+        ExportExcelCommand = new RelayCommand(_ => ExportExcel());
         ClearPlanCommand = new RelayCommand(_ => ClearPlan());
         CellClickCommand = new RelayCommand(param => OnCellClicked(param as DayCell));
 
@@ -275,6 +278,32 @@ public class MainViewModel : ViewModelBase
             {
                 StatusMessage = $"Fehler beim DOC-Export: {ex.Message}";
                 MessageBox.Show($"Fehler beim DOC-Export:\n{ex.Message}", "Exportfehler", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void ExportExcel()
+    {
+        var sfd = new SaveFileDialog
+        {
+            Filter = "Excel Arbeitsmappe (*.xlsx)|*.xlsx",
+            FileName = $"Dienstplan_Pforte_{MonthYearTitle.Replace(" ", "_")}.xlsx",
+            Title = "Dienstplan als Excel exportieren"
+        };
+
+        if (sfd.ShowDialog() == true)
+        {
+            try
+            {
+                StatusMessage = "Exportiere nach Excel...";
+                _excelExporter.ExportToExcel(_schedule, sfd.FileName);
+                StatusMessage = $"Erfolgreich als Excel exportiert: {Path.GetFileName(sfd.FileName)}";
+                MessageBox.Show($"Dienstplan erfolgreich als Excel exportiert:\n{sfd.FileName}", "Export erfolgreich", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Fehler beim Excel-Export: {ex.Message}";
+                MessageBox.Show($"Fehler beim Excel-Export:\n{ex.Message}", "Exportfehler", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

@@ -35,5 +35,6 @@ public partial class App : System.Windows.Application
         services.AddSingleton<WordScheduleImporter>();
         services.AddSingleton<PdfScheduleExporter>();
         services.AddSingleton<DocScheduleExporter>();
+        services.AddSingleton<ExcelScheduleExporter>();
     }
 }

@@ -179,6 +179,7 @@ public class DienstplanerCoreTests
 
         string pdfPath = Path.Combine(tempDir, "test_out.pdf");
         string docPath = Path.Combine(tempDir, "test_out.doc");
+        string xlsxPath = Path.Combine(tempDir, "test_out.xlsx");
 
         var pdfExporter = new PdfScheduleExporter();
         pdfExporter.ExportToPdf(schedule, pdfPath);
@@ -190,7 +191,12 @@ public class DienstplanerCoreTests
         Assert.True(File.Exists(docPath));
         Assert.True(new FileInfo(docPath).Length > 1000);
 
+        var excelExporter = new ExcelScheduleExporter();
+        excelExporter.ExportToExcel(schedule, xlsxPath);
+        Assert.True(File.Exists(xlsxPath));
+        Assert.True(new FileInfo(xlsxPath).Length > 1000);
+
         // Aufräumen
-        try { File.Delete(pdfPath); File.Delete(docPath); } catch { }
+        try { File.Delete(pdfPath); File.Delete(docPath); File.Delete(xlsxPath); } catch { }
     }
 }

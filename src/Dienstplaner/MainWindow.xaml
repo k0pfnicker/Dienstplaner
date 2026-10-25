@@ -132,10 +132,16 @@
                             <TextBlock Text="Export PDF"/>
                         </StackPanel>
                     </Button>
-                    <Button Style="{StaticResource FlatButton}" Command="{Binding ExportDocCommand}" ToolTip="Als Word 97-2003 Vorlage (.doc) exportieren">
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding ExportDocCommand}" ToolTip="Als Word 97-2003 Vorlage (.doc) exportieren" Margin="0,0,6,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="💾" Margin="0,0,5,0"/>
                             <TextBlock Text="Export DOC"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding ExportExcelCommand}" ToolTip="Als Excel-Arbeitsmappe (.xlsx) exportieren">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📊" Margin="0,0,5,0"/>
+                            <TextBlock Text="Export Excel"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
