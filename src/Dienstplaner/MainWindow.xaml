@@ -3,201 +3,343 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Dienstplaner"
+        xmlns:vm="clr-namespace:Dienstplaner.ViewModels"
+        xmlns:m="clr-namespace:Dienstplaner.Domain.Models"
         mc:Ignorable="d"
-        Title="Dienstplaner" Height="600" Width="1000"
-        WindowStartupLocation="CenterScreen">
-    
+        Title="Dienstplaner 2.0 — Pforte Constantia" 
+        Height="780" Width="1240"
+        MinHeight="600" MinWidth="950"
+        WindowStartupLocation="CenterScreen"
+        Background="#F4F6F9"
+        FontFamily="Segoe UI">
+
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <!-- Cell Context Menu -->
+        <ContextMenu x:Key="CellContextMenu">
+            <MenuItem Header="Schicht S (00:00 - 08:15 Uhr)" Click="SetCellShift_Click" Tag="S" FontWeight="SemiBold" Foreground="#0D47A1"/>
+            <MenuItem Header="Schicht N (16:00 - 00:00 Uhr)" Click="SetCellShift_Click" Tag="N" FontWeight="SemiBold" Foreground="#4A148C"/>
+            <MenuItem Header="Schicht T (07:15 - 16:00 Uhr)" Click="SetCellShift_Click" Tag="T" FontWeight="SemiBold" Foreground="#E65100"/>
+            <Separator/>
+            <MenuItem Header="Urlaub (U)" Click="SetCellShift_Click" Tag="U" FontWeight="SemiBold" Foreground="#1B5E20"/>
+            <MenuItem Header="Freier Tag (FT)" Click="SetCellShift_Click" Tag="FT" Foreground="#616161"/>
+            <MenuItem Header="Krank (K)" Click="SetCellShift_Click" Tag="K" Foreground="#B71C1C"/>
+            <Separator/>
+            <MenuItem Header="Zelle leeren" Click="SetCellShift_Click" Tag="" Foreground="#757575"/>
+            <MenuItem Header="Sperrung umschalten (🔒)" Click="ToggleLock_Click"/>
+        </ContextMenu>
+
+        <Style x:Key="FlatButton" TargetType="Button">
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Foreground" Value="#263238"/>
+            <Setter Property="BorderBrush" Value="#CFD8DC"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#ECEFF1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
+            <Setter Property="Background" Value="#1976D2"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#1565C0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1565C0"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource FlatButton}">
+            <Setter Property="Background" Value="#2E7D32"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#1B5E20"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#1B5E20"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/> <!-- Header / Toolbar -->
+            <RowDefinition Height="*"/>    <!-- Interactive Monthly Grid -->
+            <RowDefinition Height="Auto"/> <!-- Bottom Stats & Legend -->
+            <RowDefinition Height="Auto"/> <!-- Status Bar -->
         </Grid.RowDefinitions>
 
-        <!-- Top Bar -->
-        <ToolBarPanel Grid.Row="0" Margin="5">
-            <ToolBar>
-                <Button Command="{Binding LoadCommand}">Dienstplan importieren...</Button>
-                <Separator/>
-                <TextBlock VerticalAlignment="Center" Margin="10,0,5,0">Person auswählen:</TextBlock>
-                <ComboBox ItemsSource="{Binding AvailablePersons}" 
-                          SelectedItem="{Binding SelectedPersonSchedule}"
-                          DisplayMemberPath="Name" 
-                          Width="200"/>
-                <Separator/>
-                <Button Click="InfoButton_Click" ToolTip="Erklärungen zu Zeiten und Farben">ℹ Info &amp; Hilfe</Button>
-            </ToolBar>
-        </ToolBarPanel>
+        <!-- 1. Header Toolbar -->
+        <Border Grid.Row="0" Background="#FFFFFF" BorderBrush="#CFD8DC" BorderThickness="0,0,0,1" Padding="12,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- Main Content & Logs -->
-        <Grid Grid.Row="1" Margin="10">
+                <!-- Month Navigation -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding PreviousMonthCommand}" Content="◀" ToolTip="Vorheriger Monat" Padding="8,4" Margin="0,0,4,0"/>
+                    <TextBlock Text="{Binding MonthYearTitle}" FontSize="18" FontWeight="Bold" Foreground="#1A237E" VerticalAlignment="Center" Margin="8,0" MinWidth="160" TextAlignment="Center"/>
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding NextMonthCommand}" Content="▶" ToolTip="Nächster Monat" Padding="8,4" Margin="4,0,16,0"/>
+                </StackPanel>
+
+                <!-- Generator Action -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource AccentButton}" Command="{Binding GeneratePlanCommand}" ToolTip="Automatische Planerstellung nach Prioritäten und Ruhezeitregeln" Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚡" FontWeight="Bold" Margin="0,0,6,0"/>
+                            <TextBlock Text="Plan automatisch generieren" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding ClearPlanCommand}" Content="🗑 Ungesperrte leeren" ToolTip="Löscht alle nicht fest gesperrten Schichten" Margin="0,0,16,0"/>
+                </StackPanel>
+
+                <!-- Import / Export Actions -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding ImportPdfCommand}" Content="📄 PDF importieren" Margin="0,0,6,0"/>
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding ImportDocCommand}" Content="📝 DOC importieren" Margin="0,0,12,0"/>
+                    <Separator Width="1" Background="#CFD8DC" Margin="0,2,12,2"/>
+                    <Button Style="{StaticResource SuccessButton}" Command="{Binding ExportPdfCommand}" ToolTip="Druckfertigen Monatsplan als PDF exportieren" Margin="0,0,6,0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="💾" Margin="0,0,5,0"/>
+                            <TextBlock Text="Export PDF"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource FlatButton}" Command="{Binding ExportDocCommand}" ToolTip="Als Word 97-2003 Vorlage (.doc) exportieren">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="💾" Margin="0,0,5,0"/>
+                            <TextBlock Text="Export DOC"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 2. Main Monthly Schedule Grid -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Margin="10">
+            <Border Background="#FFFFFF" BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="4" Padding="6">
+                <StackPanel>
+                    <!-- Days Header Row -->
+                    <Border Background="#ECEFF1" BorderBrush="#B0BEC5" BorderThickness="1" CornerRadius="4" Margin="0,0,0,4" Padding="2">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/> <!-- Mitarbeiter Name -->
+                                <ColumnDefinition Width="*"/>   <!-- 28..31 Day Columns -->
+                                <ColumnDefinition Width="60"/>  <!-- Total Hours -->
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Mitarbeiter / Tag" FontWeight="Bold" FontSize="11" Foreground="#37474F" VerticalAlignment="Center" Margin="8,0"/>
+
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding DayHeaders}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#CFD8DC" BorderThickness="0,0,1,0" Padding="1" Background="{Binding StatusBg}">
+                                            <StackPanel HorizontalAlignment="Center">
+                                                <TextBlock Text="{Binding WeekdayShort}" FontSize="9" FontWeight="Bold" Foreground="#546E7A" HorizontalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Day}" FontSize="11" FontWeight="Bold" Foreground="#263238" HorizontalAlignment="Center"/>
+                                                <!-- Besetzungs-Punkt -->
+                                                <Ellipse Width="6" Height="6" Fill="{Binding StatusColor}" ToolTip="{Binding StatusText}" Margin="0,2,0,0" HorizontalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Grid.Column="2" Text="Gesamt" FontWeight="Bold" FontSize="11" Foreground="#37474F" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Employee Rows -->
+                    <ItemsControl ItemsSource="{Binding EmployeeRows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#ECEFF1" BorderThickness="0,0,0,1" Padding="0,3">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Employee Info -->
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="6,0">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="11" Foreground="#263238"/>
+                                            <TextBlock Text="{Binding Role}" FontSize="9" Foreground="#78909C"/>
+                                        </StackPanel>
+
+                                        <!-- 28..31 Day Shift Cells -->
+                                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Cells}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Rows="1"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Button Margin="1" 
+                                                            Padding="0" 
+                                                            Height="34"
+                                                            Background="{Binding BgColor}"
+                                                            Foreground="{Binding TextColor}"
+                                                            FontWeight="Bold"
+                                                            FontSize="11"
+                                                            ContextMenu="{StaticResource CellContextMenu}"
+                                                            Command="{Binding DataContext.CellClickCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            ToolTipService.ShowDuration="10000">
+                                                        <Button.ToolTip>
+                                                            <ToolTip>
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Date, StringFormat='dddd, dd.MM.yyyy'}" FontWeight="Bold"/>
+                                                                    <TextBlock Text="{Binding ShiftType, StringFormat='Schicht: {0}'}"/>
+                                                                    <TextBlock Text="{Binding TimeRangeStr}"/>
+                                                                    <TextBlock Text="{Binding DurationStr, StringFormat='Dauer: {0} Std.'}"/>
+                                                                    <TextBlock Text="Linksklick: Durchwechseln | Rechtsklick: Menü" FontSize="9" Foreground="#757575" Margin="0,4,0,0"/>
+                                                                </StackPanel>
+                                                            </ToolTip>
+                                                        </Button.ToolTip>
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}"
+                                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="3">
+                                                                    <Grid>
+                                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        <!-- Schloss-Symbol falls gesperrt -->
+                                                                        <TextBlock Text="🔒" 
+                                                                                   FontSize="6" 
+                                                                                   Foreground="#FF8F00"
+                                                                                   HorizontalAlignment="Right" 
+                                                                                   VerticalAlignment="Top" 
+                                                                                   Margin="0,1,1,0"
+                                                                                   Visibility="{Binding IsLocked, Converter={StaticResource BoolToVis}}"/>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                        <TextBlock Text="{Binding DisplayCode}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+
+                                        <!-- Total Hours for this Employee -->
+                                        <TextBlock Grid.Column="2" 
+                                                   Text="{Binding TotalDurationStr}" 
+                                                   FontWeight="Bold" 
+                                                   FontSize="11" 
+                                                   Foreground="#1A237E" 
+                                                   VerticalAlignment="Center" 
+                                                   HorizontalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+
+        <!-- 3. Bottom Panels: Legend & Employee Stats Table -->
+        <Grid Grid.Row="2" Margin="10,0,10,10">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="380"/> <!-- Legende & Regeln -->
+                <ColumnDefinition Width="*"/>   <!-- Monatsstatistik pro Person -->
             </Grid.ColumnDefinitions>
 
-            <!-- Linke Spalte (Tabelle und Log) -->
-            <Grid Grid.Column="0" Margin="0,0,10,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="3*" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="1*" />
-                </Grid.RowDefinitions>
-                
-                <DataGrid Grid.Row="0" 
-                      ItemsSource="{Binding Assignments}" 
-                      AutoGenerateColumns="False" 
-                      IsReadOnly="True"
-                      AlternatingRowBackground="#f0f0f0">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Tag" Binding="{Binding DayOfMonthStr}"/>
-                    <DataGridTextColumn Header="Datum" Binding="{Binding Date, StringFormat=\{0:dd.MM.yyyy\}}"/>
-                    <DataGridTextColumn Header="Wochentag" Binding="{Binding Date, StringFormat=\{0:dddd\}, ConverterCulture=de-DE}"/>
-                    <DataGridTextColumn Header="Kürzel" Binding="{Binding CodeDisplay}"/>
-                    <DataGridTextColumn Header="Typ" Binding="{Binding TypeDisplay}"/>
-                    <DataGridTextColumn Header="Start" Binding="{Binding StartTimeStr}"/>
-                    <DataGridTextColumn Header="Ende" Binding="{Binding EndTimeStr}"/>
-                    <DataGridTextColumn Header="Dauer" Binding="{Binding DurationStr}"/>
-                    <DataGridTextColumn Header="Feiertag" Binding="{Binding IsHolidayDisplay}"/>
-                </DataGrid.Columns>
-                
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <Setter Property="Background" Value="White" />
-                        <Setter Property="Foreground" Value="Black" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Type}" Value="Frei">
-                                <Setter Property="Background" Value="#F5F5F5" />
-                                <Setter Property="Foreground" Value="#00930a" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Type}" Value="Urlaub">
-                                <Setter Property="Background" Value="#E3F2FD" />
-                                <Setter Property="Foreground" Value="#0D47A1" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Type}" Value="Krank">
-                                <Setter Property="Background" Value="#FFF3E0" />
-                                <Setter Property="Foreground" Value="#E65100" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Type}" Value="Feiertag">
-                                <Setter Property="Background" Value="#FFEBEE" />
-                                <Setter Property="Foreground" Value="#B71C1C" />
-                                <Setter Property="FontWeight" Value="Bold" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsPaddingDay}" Value="True">
-                                <Setter Property="Background" Value="#EEEEEE" />
-                                <Setter Property="Foreground" Value="#BDBDBD" />
-                                <Setter Property="FontStyle" Value="Italic" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsToday}" Value="True">
-                                <Setter Property="BorderBrush" Value="#FFB300" />
-                                <Setter Property="BorderThickness" Value="2" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Type}" Value="Unbekannt">
-                                <Setter Property="Background" Value="#FFCDD2" />
-                                <Setter Property="Foreground" Value="#B71C1C" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
-            </DataGrid>
-
-            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch" Background="LightGray" Margin="0,5,0,5"/>
-
-            <GroupBox Grid.Row="2" Header="Import-Log (Debug)">
-                <TextBox Text="{Binding FullDebugLog, Mode=OneWay}" 
-                         IsReadOnly="True" 
-                         TextWrapping="Wrap" 
-                         VerticalScrollBarVisibility="Auto" 
-                         BorderThickness="0"
-                         Background="Transparent"
-                         FontFamily="Consolas" 
-                         FontSize="11" />
-            </GroupBox>
-            </Grid>
-
-            <!-- Rechte Spalte: Statistik -->
-            <GroupBox Grid.Column="1" Header="Statistik">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+            <!-- Legende & Schichtzeiten -->
+            <Border Grid.Column="0" Background="#FFFFFF" BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="Schichten &amp; Regeln (Constantia Pforte)" FontWeight="Bold" FontSize="11" Foreground="#1A237E" Margin="0,0,0,6"/>
                     
-                    <CheckBox Grid.Row="0" Margin="0,0,0,10"
-                              IsChecked="{Binding ShowAllStatistics}"
-                              Content="Für alle Personen anzeigen"/>
+                    <WrapPanel Margin="0,0,0,8">
+                        <Border Background="#E3F2FD" BorderBrush="#1E88E5" BorderThickness="1" CornerRadius="3" Padding="4,2" Margin="0,0,6,4">
+                            <TextBlock Text="S: 00:00–08:15 (8:15h)" FontSize="9" FontWeight="Bold" Foreground="#0D47A1"/>
+                        </Border>
+                        <Border Background="#F3E5F5" BorderBrush="#8E24AA" BorderThickness="1" CornerRadius="3" Padding="4,2" Margin="0,0,6,4">
+                            <TextBlock Text="N: 16:00–00:00 (8:00h)" FontSize="9" FontWeight="Bold" Foreground="#4A148C"/>
+                        </Border>
+                        <Border Background="#FFF3E0" BorderBrush="#FB8C00" BorderThickness="1" CornerRadius="3" Padding="4,2" Margin="0,0,6,4">
+                            <TextBlock Text="T: 07:15–16:00 (8:45h)" FontSize="9" FontWeight="Bold" Foreground="#E65100"/>
+                        </Border>
+                        <Border Background="#E8F5E9" BorderBrush="#43A047" BorderThickness="1" CornerRadius="3" Padding="4,2" Margin="0,0,6,4">
+                            <TextBlock Text="U: Urlaub" FontSize="9" FontWeight="Bold" Foreground="#1B5E20"/>
+                        </Border>
+                        <Border Background="#F5F5F5" BorderBrush="#757575" BorderThickness="1" CornerRadius="3" Padding="4,2" Margin="0,0,6,4">
+                            <TextBlock Text="FT: Freier Tag" FontSize="9" FontWeight="Bold" Foreground="#616161"/>
+                        </Border>
+                    </WrapPanel>
 
-                    <!-- Single User Stats -->
-                    <StackPanel Grid.Row="1">
-                        <StackPanel.Style>
-                            <Style TargetType="StackPanel">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowAllStatistics}" Value="False">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </StackPanel.Style>
-                        
-                        <TextBlock Text="{Binding SelectedPersonSchedule.Name, StringFormat='{}Name: {0}'}" FontWeight="Bold" Margin="0,0,0,10" FontSize="14" />
-                        <TextBlock Text="{Binding SelectedPersonSchedule.TotalWorkHours, StringFormat='{}Arbeitsstunden: {0:F1} h'}" Margin="0,2" />
-                        <TextBlock Text="{Binding SelectedPersonSchedule.UrlaubDays, StringFormat='{}Urlaub: {0} Tag(e)'}" Margin="0,2" />
-                        <TextBlock Text="{Binding SelectedPersonSchedule.KrankDays, StringFormat='{}Krankheit: {0} Tag(e)'}" Margin="0,2" />
-                        <TextBlock Text="{Binding SelectedPersonSchedule.FeiertagDays, StringFormat='{}Feiertage: {0} Tag(e)'}" Margin="0,2" />
-                        <TextBlock Text="{Binding SelectedPersonSchedule.FreiDays, StringFormat='{}Freie Anträge / Frei: {0} Tag(e)'}" Margin="0,2" />
-                    </StackPanel>
+                    <TextBlock Text="ℹ Mo–Fr: S + N Besetzung | Sa/So &amp; Feiertage: zusätzlich T Besetzung." FontSize="9.5" Foreground="#546E7A" Margin="0,0,0,2"/>
+                    <TextBlock Text="ℹ Regel: Nach Nachtschicht (N) kein Frühdienst direkt (S / T)." FontSize="9.5" FontWeight="SemiBold" Foreground="#D32F2F"/>
+                </StackPanel>
+            </Border>
 
-                    <!-- All Users Stats -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ScrollViewer.Style>
-                            <Style TargetType="ScrollViewer">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ShowAllStatistics}" Value="True">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ScrollViewer.Style>
-                        <ItemsControl ItemsSource="{Binding AvailablePersons}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Padding="0,5">
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                            <Grid Margin="5,2,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" MinWidth="80"/>
-                                                    <ColumnDefinition Width="Auto" MinWidth="80"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition/>
-                                                    <RowDefinition/>
-                                                    <RowDefinition/>
-                                                </Grid.RowDefinitions>
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding TotalWorkHours, StringFormat='{}Std: {0:F1}h'}" FontSize="11"/>
-                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding UrlaubDays, StringFormat='{}Urlaub: {0}'}" FontSize="11"/>
-                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding KrankDays, StringFormat='{}Krank: {0}'}" FontSize="11"/>
-                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FeiertagDays, StringFormat='{}Feiertag: {0}'}" FontSize="11"/>
-                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding FreiDays, StringFormat='{}Frei: {0}'}" FontSize="11"/>
-                                            </Grid>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Grid>
-            </GroupBox>
+            <!-- Live-Stundenstatistik aller Mitarbeiter -->
+            <Border Grid.Column="1" Background="#FFFFFF" BorderBrush="#CFD8DC" BorderThickness="1" CornerRadius="4" Padding="6">
+                <DataGrid ItemsSource="{Binding EmployeeStats}" 
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True" 
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          HorizontalGridLinesBrush="#ECEFF1"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          RowHeight="24"
+                          FontSize="10">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Mitarbeiter" Binding="{Binding Employee.Name}" Width="150" FontWeight="SemiBold"/>
+                        <DataGridTextColumn Header="Rolle" Binding="{Binding Employee.RoleDisplay}" Width="90"/>
+                        <DataGridTextColumn Header="Ist-Std." Binding="{Binding FormattedDuration}" Width="70" FontWeight="Bold"/>
+                        <DataGridTextColumn Header="Schichten" Binding="{Binding TotalShifts}" Width="65"/>
+                        <DataGridTextColumn Header="S (Früh)" Binding="{Binding CountS}" Width="55"/>
+                        <DataGridTextColumn Header="N (Nacht)" Binding="{Binding CountN}" Width="55"/>
+                        <DataGridTextColumn Header="T (Tag)" Binding="{Binding CountT}" Width="55"/>
+                        <DataGridTextColumn Header="Urlaub" Binding="{Binding CountUrlaub}" Width="55"/>
+                        <DataGridTextColumn Header="Frei" Binding="{Binding CountFrei}" Width="50"/>
+                        <DataGridTextColumn Header="Saldo" Binding="{Binding DifferenceHoursStr}" Width="60"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
         </Grid>
 
-        <!-- Status Bar -->
-        <StatusBar Grid.Row="2">
+        <!-- 4. Status Bar -->
+        <StatusBar Grid.Row="3" Background="#ECEFF1" BorderBrush="#CFD8DC" BorderThickness="0,1,0,0" Padding="8,2">
             <StatusBarItem>
-                <TextBlock Text="{Binding StatusText}" />
+                <TextBlock Text="{Binding StatusMessage}" FontSize="10.5" Foreground="#37474F"/>
             </StatusBarItem>
         </StatusBar>
     </Grid>

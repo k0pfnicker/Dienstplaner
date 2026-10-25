@@ -1,15 +1,18 @@
 name: Build and Release
 
 on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.[0-9]+*'
   release:
     types: [published]
 
 jobs:
   build:
-    name: Build .NET 8 WPF App
+    name: Build Standalone Windows EXE
     runs-on: windows-latest
     
-    # Needs permissions to upload files to a release
     permissions:
       contents: write
       
@@ -22,10 +25,18 @@ jobs:
       with:
         dotnet-version: '8.0.x'
         
-    - name: Publish Windows 64-bit EXE
+    - name: Run Unit Tests
+      run: dotnet test ./tests/Dienstplaner.Tests/Dienstplaner.Tests.csproj -c Release
+        
+    - name: Publish Windows 64-bit Single-File EXE
       run: dotnet publish ./src/Dienstplaner/Dienstplaner.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o release_output
       
     - name: Upload Release Asset
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh release upload "${{ github.event.release.tag_name }}" release_output/Dienstplaner.exe --clobber
+      uses: softprops/action-gh-release@v2
+      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
+      with:
+        files: release_output/Dienstplaner.exe
+        name: Dienstplaner ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
